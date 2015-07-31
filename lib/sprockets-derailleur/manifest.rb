@@ -115,7 +115,7 @@ module Sprockets
                 else
                   logger.debug "Writing #{target}"
                   asset.write_to target
-                  asset.write_to "#{target}.gz" if asset.is_a?(BundledAsset)
+                  asset.write_to "#{target}.gz" if asset.is_a?(Sprockets::Asset)
                 end
 
                 Marshal.dump(data, child_write)
