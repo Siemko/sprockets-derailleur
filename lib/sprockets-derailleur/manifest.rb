@@ -72,6 +72,8 @@ module Sprockets
         save
       end
 
+      gzip_assets
+
       logger.warn "Completed compiling assets (#{(time.real * 100).round / 100.0}s)"
 
       unless paths_with_errors.empty?
@@ -115,7 +117,6 @@ module Sprockets
                 else
                   logger.debug "Writing #{target}"
                   asset.write_to target
-                  asset.write_to "#{target}.gz" if asset.is_a?(Sprockets::Asset)
                 end
 
                 Marshal.dump(data, child_write)
@@ -137,6 +138,35 @@ module Sprockets
       child_write.close
 
       {:read => parent_read, :write => parent_write, :pid => pid}
+    end
+
+    private
+
+    def gzip_assets
+      public_assets = File.join(::Rails.root, "public", ::Rails.application.config.assets.prefix)
+
+      Dir["#{public_assets}/**/*"].each do |file|
+        next if environment.skip_gzip?
+
+        asset_path = file.sub(public_assets, '').sub(/-[a-z0-9]{64}\./, '.').sub(/^\//, '')
+
+        next unless (asset = environment.find_asset(asset_path))
+
+        gzip = Sprockets::Utils::Gzip.new(asset)
+
+        next if gzip.cannot_compress?(environment.mime_types)
+
+        target = File.join(dir, asset.digest_path)
+
+        next unless File.exist?(target)
+
+        if File.exist?("#{target}.gz")
+          logger.debug "Skipping #{target}.gz, already exists"
+        else
+          logger.info "Writing #{target}.gz"
+          gzip.compress(target)
+        end
+      end
     end
   end
 end
