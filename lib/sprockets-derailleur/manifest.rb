@@ -163,7 +163,7 @@ module Sprockets
         if File.exist?("#{target}.gz")
           logger.debug "Skipping #{target}.gz, already exists"
         else
-          logger.info "Writing #{target}.gz"
+          logger.debug "Writing #{target}.gz"
           gzip.compress(target)
         end
       end
